@@ -18,56 +18,40 @@
         Se vês este texto e o modelo, está tudo a funcionar 👍
       </h1>
       <p style="margin:4px 0 0;">
-        Usa o botão em baixo para tentar ver em AR.
+        Usa o botão em baixo para ver em AR (se o teu telemóvel suportar).
       </p>
     </div>
 
     <!-- O teu modelo 3D -->
     <model-viewer
-  id="mv"
-  src="Siemens%20CH.glb"
-  ar
-  ar-modes="webxr scene-viewer quick-look"
-  camera-controls
-  auto-rotate
-  style="width:100vw; height:100vh;">
+      id="mv"
+      src="Siemens%20CH.glb"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      auto-rotate
+      style="width:100vw; height:100vh;">
 
-  <!-- Este botão substitui o cubo nativo, mas usa o mesmo sistema AR -->
-  <button slot="ar-button"
-    style="
-      position:absolute;
-      bottom:16px;
-      left:50%;
-      transform:translateX(-50%);
-      padding:12px 18px;
-      border-radius:999px;
-      border:none;
-      background:white;
-      color:black;
-      font-weight:600;
-      font-family:inherit;
-      box-shadow:0 4px 12px rgba(0,0,0,0.3);
-    ">
-    Ver em AR
-  </button>
+      <!-- Este botão substitui o cubo nativo, mas usa o mesmo sistema AR -->
+      <button slot="ar-button"
+        style="
+          position:absolute;
+          bottom:16px;
+          left:50%;
+          transform:translateX(-50%);
+          padding:12px 18px;
+          border-radius:999px;
+          border:none;
+          background:white;
+          color:black;
+          font-weight:600;
+          font-family:inherit;
+          box-shadow:0 4px 12px rgba(0,0,0,0.3);
+        ">
+        Ver em AR
+      </button>
 
-</model-viewer>
-    <script>
-      const mv = document.getElementById('mv');
-      const btn = document.getElementById('btnAR');
-
-      btn.addEventListener('click', async () => {
-        // Se o model-viewer conseguir ativar AR
-        if (mv.canActivateAR) {
-          const ok = await mv.activateAR();
-          if (!ok) {
-            alert('O dispositivo parece suportar AR, mas a ativação falhou.');
-          }
-        } else {
-          alert('Este dispositivo/navegador não permite AR nativa aqui. Tenta Chrome em Android, ou no iPhone vamos precisar de ficheiro USDZ.');
-        }
-      });
-    </script>
+    </model-viewer>
 
   </body>
 </html>
