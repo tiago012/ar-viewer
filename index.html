@@ -5,7 +5,7 @@
     <title>AR Viewer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Carrega o model-viewer para preview 3D -->
+    <!-- Carrega o model-viewer -->
     <script type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
     </script>
@@ -15,23 +15,25 @@
 
     <div style="position:fixed; top:10px; left:10px; z-index:10;">
       <h1 style="margin:0; font-size:18px;">
-        Preview 3D + AR
+        Se vês este texto e o modelo, está tudo a funcionar 👍
       </h1>
       <p style="margin:4px 0 0;">
-        Roda o modelo. Em telemóvel Android, usa o botão em baixo para ver em AR.
+        No telemóvel, usa o ícone do cubo de AR ou o botão em baixo.
       </p>
     </div>
 
-    <!-- Preview 3D normal -->
+    <!-- O teu modelo 3D -->
     <model-viewer
       id="mv"
       src="Siemens%20CH.glb"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
       camera-controls
       auto-rotate
       style="width:100vw; height:100vh;">
     </model-viewer>
 
-    <!-- Botão fixo para abrir AR nativo (Android Scene Viewer) -->
+    <!-- Botão extra (podes ignorar) -->
     <button id="btnAR"
       style="
         position:fixed;
@@ -52,31 +54,19 @@
     </button>
 
     <script>
-      // URL absoluto para o teu ficheiro GLB alojado no GitHub Pages
-      const modelUrl = "https://tiago012.github.io/ar-viewer/Siemens%20CH.glb";
-
+      const mv = document.getElementById('mv');
       const btn = document.getElementById('btnAR');
 
+      // Sem alerts, sem mensagens — se falhar, falha em silêncio
       btn.addEventListener('click', () => {
-        const ua = navigator.userAgent || navigator.vendor || window.opera;
-
-        // iOS (para futuro, quando tiveres .usdz)
-        if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) {
-          alert("No iPhone, precisamos de um ficheiro .usdz. Para já, usa um Android para ver em AR.");
-          return;
+        if (mv && mv.activateAR) {
+          mv.activateAR();
         }
-
-        // Android: abre diretamente o Scene Viewer
-        const sceneViewerUrl =
-          "https://arvr.google.com/scene-viewer/1.0" +
-          "?file=" + encodeURIComponent(modelUrl) +
-          "&mode=ar_preferred";
-
-        // Alguns browsers in-app lixam isto → ideal é Chrome
-        window.location.href = sceneViewerUrl;
       });
     </script>
 
   </body>
 </html>
+
+
 
