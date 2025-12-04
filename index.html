@@ -2,7 +2,7 @@
 <html lang="pt">
   <head>
     <meta charset="UTF-8" />
-    <title>Teste AR</title>
+    <title>AR Viewer</title>
 
     <!-- Carrega o model-viewer -->
     <script type="module"
@@ -14,15 +14,15 @@
 
     <div style="position:fixed; top:10px; left:10px; z-index:10;">
       <h1 style="margin:0; font-size:18px;">
-        Se vês este texto, o site está a funcionar 👍
+        Se vês este texto e o modelo, está tudo a funcionar 👍
       </h1>
       <p style="margin:4px 0 0;">
-        Abaixo deverá aparecer o modelo 3D (Astronauta de exemplo).
+        No telemóvel, carrega no ícone de AR para ver “em tempo real”.
       </p>
     </div>
 
     <model-viewer
-      src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+      src="Siemens%20CH.glb"
       ar
       ar-modes="webxr scene-viewer quick-look"
       camera-controls
@@ -32,6 +32,7 @@
 
   </body>
 </html>
+
 
 
 
