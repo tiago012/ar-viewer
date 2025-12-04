@@ -18,62 +18,19 @@
         Se vês este texto e o modelo, está tudo a funcionar 👍
       </h1>
       <p style="margin:4px 0 0;">
-        Usa o botão em baixo para ver em AR (se o teu telemóvel suportar).
+        No telemóvel, usa o ícone do cubo (AR) no canto do modelo.
       </p>
     </div>
 
     <!-- O teu modelo 3D -->
     <model-viewer
-      id="mv"
       src="Siemens%20CH.glb"
       ar
       ar-modes="webxr scene-viewer quick-look"
       camera-controls
       auto-rotate
       style="width:100vw; height:100vh;">
-
-      <!-- Este botão substitui o cubo nativo, mas usa o mesmo sistema AR -->
-      <button slot="ar-button"
-        style="
-          position:absolute;
-          bottom:16px;
-          left:50%;
-          transform:translateX(-50%);
-          padding:12px 18px;
-          border-radius:999px;
-          border:none;
-          background:white;
-          color:black;
-          font-weight:600;
-          font-family:inherit;
-          box-shadow:0 4px 12px rgba(0,0,0,0.3);
-        ">
-        Ver em AR
-      </button>
-
     </model-viewer>
 
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
