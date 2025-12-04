@@ -1,9 +1,39 @@
 <!DOCTYPE html>
 <html lang="pt">
-  <body style="margin:0; background:#202020; color:white; font-size:32px; display:flex; align-items:center; justify-content:center; height:100vh;">
-    Olá Tiago, se vês este texto, o GitHub Pages está a funcionar 😄
+  <head>
+    <meta charset="UTF-8" />
+    <title>Teste AR</title>
+
+    <!-- Carrega o model-viewer -->
+    <script type="module"
+      src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
+    </script>
+  </head>
+
+  <body style="margin:0; background:#202020; color:white; font-family:sans-serif;">
+
+    <div style="position:fixed; top:10px; left:10px; z-index:10;">
+      <h1 style="margin:0; font-size:18px;">
+        Se vês este texto, o site está a funcionar 👍
+      </h1>
+      <p style="margin:4px 0 0;">
+        Abaixo deverá aparecer o modelo 3D.
+      </p>
+    </div>
+
+    <model-viewer
+      src="Siemens%20CH.glb"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      auto-rotate
+      style="width:100vw; height:100vh;">
+    </model-viewer>
+
   </body>
 </html>
+
+
 
 
 
