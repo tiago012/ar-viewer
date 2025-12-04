@@ -1,11 +1,23 @@
 <!DOCTYPE html>
 <html>
-  <body style="margin:0">
+  <body style="margin:0; background:#202020;">
 
-    <model-viewer src="https://raw.githubusercontent.com/tiago012/ar-viewer/main/Siemens%20CH.glb"
-      ios-src="LINK_DO_USDZ"
-      ar ar-modes="webxr scene-viewer quick-look"
-      camera-controls auto-rotate
+    <!-- Texto para confirmar que a página está a abrir -->
+    <div style="position:fixed; top:10px; left:10px; color:white; z-index:10;">
+      <h1 style="margin:0; font-size:18px;">
+        Se vês este texto, o site está a funcionar 👍
+      </h1>
+      <p style="margin:4px 0 0;">
+        Abaixo deveria aparecer o modelo 3D.
+      </p>
+    </div>
+
+    <model-viewer
+      src="Siemens%20CH.glb"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      auto-rotate
       style="width:100vw; height:100vh;">
     </model-viewer>
 
@@ -15,6 +27,8 @@
 
   </body>
 </html>
+
+
 
 
 
