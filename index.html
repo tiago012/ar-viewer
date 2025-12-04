@@ -1,46 +1,79 @@
-<model-viewer
-  id="mv"
-  src="Siemens%20CH.glb"
-  ar
-  ar-modes="webxr scene-viewer quick-look"
-  camera-controls
-  auto-rotate
-  style="width:100vw; height:100vh;">
-</model-viewer>
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AR Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<!-- Botão fora do model-viewer, visível em todo o lado -->
-<button id="btnAR"
-  style="
-    position:fixed;
-    bottom:16px;
-    left:50%;
-    transform:translateX(-50%);
-    padding:12px 18px;
-    border-radius:999px;
-    border:none;
-    background:white;
-    color:black;
-    font-weight:600;
-    font-family:inherit;
-    box-shadow:0 4px 12px rgba(0,0,0,0.3);
-    z-index:20;
-  ">
-  Ver em AR
-</button>
+    <!-- Carrega o model-viewer -->
+    <script type="module"
+      src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
+    </script>
+  </head>
 
-<script>
-  const mv = document.getElementById('mv');
-  const btn = document.getElementById('btnAR');
+  <body style="margin:0; background:#202020; color:white; font-family:sans-serif;">
 
-  btn.addEventListener('click', () => {
-    // Se o model-viewer suportar AR, tenta ativar
-    if (mv.activateAR) {
-      mv.activateAR();
-    } else {
-      alert('Este dispositivo ou navegador não suporta AR nativa. Tenta num telemóvel Android com Chrome ou num iPhone com Safari + ficheiro USDZ.');
-    }
-  });
-</script>
+    <div style="position:fixed; top:10px; left:10px; z-index:10;">
+      <h1 style="margin:0; font-size:18px;">
+        Se vês este texto e o modelo, está tudo a funcionar 👍
+      </h1>
+      <p style="margin:4px 0 0;">
+        Usa o botão em baixo para tentar ver em AR.
+      </p>
+    </div>
+
+    <!-- O teu modelo 3D -->
+    <model-viewer
+      id="mv"
+      src="https://tiago012.github.io/ar-viewer/Siemens%20CH.glb"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      auto-rotate
+      style="width:100vw; height:100vh;">
+    </model-viewer>
+
+    <!-- Botão sempre visível -->
+    <button id="btnAR"
+      style="
+        position:fixed;
+        bottom:16px;
+        left:50%;
+        transform:translateX(-50%);
+        padding:12px 18px;
+        border-radius:999px;
+        border:none;
+        background:white;
+        color:black;
+        font-weight:600;
+        font-family:inherit;
+        box-shadow:0 4px 12px rgba(0,0,0,0.3);
+        z-index:20;
+      ">
+      Ver em AR
+    </button>
+
+    <script>
+      const mv = document.getElementById('mv');
+      const btn = document.getElementById('btnAR');
+
+      btn.addEventListener('click', async () => {
+        // Se o model-viewer conseguir ativar AR
+        if (mv.canActivateAR) {
+          const ok = await mv.activateAR();
+          if (!ok) {
+            alert('O dispositivo parece suportar AR, mas a ativação falhou.');
+          }
+        } else {
+          alert('Este dispositivo/navegador não permite AR nativa aqui. Tenta Chrome em Android, ou no iPhone vamos precisar de ficheiro USDZ.');
+        }
+      });
+    </script>
+
+  </body>
+</html>
+
+
 
 
 
