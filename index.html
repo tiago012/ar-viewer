@@ -6,26 +6,43 @@
   camera-controls
   auto-rotate
   style="width:100vw; height:100vh;">
-
-  <button slot="ar-button"
-    style="
-      position:absolute;
-      bottom:16px;
-      left:50%;
-      transform:translateX(-50%);
-      padding:12px 18px;
-      border-radius:999px;
-      border:none;
-      background:white;
-      color:black;
-      font-weight:600;
-      font-family:inherit;
-      box-shadow:0 4px 12px rgba(0,0,0,0.3);
-    ">
-    Ver em AR
-  </button>
-
 </model-viewer>
+
+<!-- Botão fora do model-viewer, visível em todo o lado -->
+<button id="btnAR"
+  style="
+    position:fixed;
+    bottom:16px;
+    left:50%;
+    transform:translateX(-50%);
+    padding:12px 18px;
+    border-radius:999px;
+    border:none;
+    background:white;
+    color:black;
+    font-weight:600;
+    font-family:inherit;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    z-index:20;
+  ">
+  Ver em AR
+</button>
+
+<script>
+  const mv = document.getElementById('mv');
+  const btn = document.getElementById('btnAR');
+
+  btn.addEventListener('click', () => {
+    // Se o model-viewer suportar AR, tenta ativar
+    if (mv.activateAR) {
+      mv.activateAR();
+    } else {
+      alert('Este dispositivo ou navegador não suporta AR nativa. Tenta num telemóvel Android com Chrome ou num iPhone com Safari + ficheiro USDZ.');
+    }
+  });
+</script>
+
+
 
 
 
