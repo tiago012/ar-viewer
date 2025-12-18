@@ -2,7 +2,7 @@
 <html lang="pt">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Viewer</title>
+    <title>AR Viewer (Android)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   </head>
@@ -11,10 +11,10 @@
 
     <div style="position:fixed; top:10px; left:10px; z-index:10;">
       <h1 style="margin:0; font-size:18px;">
-        If you see this text and the model, everything is working. 👍
+        Android AR (WebXR) 👍
       </h1>
       <p style="margin:4px 0 0;">
-        On your mobile phone, use the AR cube icon or the button below.
+        Tap the floor to place the model.
       </p>
     </div>
 
@@ -41,14 +41,14 @@
     <model-viewer
       id="mv"
       src="Siemens%20CH.glb"
-      ios-src="Siemens%20CH.usdz"
       ar
-      ar-modes="webxr scene-viewer quick-look"
+      ar-modes="webxr scene-viewer"
       ar-placement="floor"
       placement="tap"
       camera-controls
       auto-rotate
-      scale="0.01 0.01 0.01"
+      scale="0.05 0.05 0.05"
+      ar-scale="auto"
       bounds="tight"
       style="width:100vw; height:100vh;">
     </model-viewer>
@@ -76,21 +76,12 @@
       const btn = document.getElementById('btnAR');
       const arHint = document.getElementById('arHint');
 
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
       mv.addEventListener('ar-status', (e) => {
         const status = e.detail.status;
 
         if (status === 'session-started') {
           arHint.style.display = 'block';
-
-          // iOS Quick Look does not allow us to control the initial placement/distance.
-          if (isIOS) {
-            arHint.textContent =
-              'iPhone: move your phone to detect the floor, then tap to place the model. If it appears too close, step back and tap again.';
-          } else {
-            arHint.textContent = 'Tap on the floor to place the model.';
-          }
+          arHint.textContent = 'Tap on the floor to place the model.';
         }
 
         if (status === 'session-ended' || status === 'failed') {
@@ -105,6 +96,8 @@
 
   </body>
 </html>
+
+
 
 
 
