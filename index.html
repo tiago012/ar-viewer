@@ -2,105 +2,14 @@
 <html lang="pt">
   <head>
     <meta charset="UTF-8" />
-    <title>AR Viewer (Android)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <title>AR Redirect</title>
   </head>
-
-  <body style="margin:0; background:#202020; color:white; font-family:sans-serif;">
-
-    <div style="position:fixed; top:10px; left:10px; z-index:10;">
-      <h1 style="margin:0; font-size:18px;">
-        Android AR (WebXR) 👍
-      </h1>
-      <p style="margin:4px 0 0;">
-        Tap the floor to place the model.
-      </p>
-    </div>
-
-    <!-- AR hint overlay -->
-    <div id="arHint"
-      style="
-        display:none;
-        position:fixed;
-        left:50%;
-        bottom:80px;
-        transform:translateX(-50%);
-        z-index:30;
-        background:rgba(0,0,0,0.75);
-        padding:10px 14px;
-        border-radius:12px;
-        font-size:14px;
-        line-height:1.3;
-        text-align:center;
-        max-width:92vw;
-        pointer-events:none;">
-      Tap on the floor to place the model.
-    </div>
-
-    <model-viewer
-      id="mv"
-      src="Siemens%20CH.glb"
-      ar
-      ar-modes="webxr scene-viewer"
-      ar-placement="floor"
-      placement="tap"
-      camera-controls
-      auto-rotate
-      scale="0.05 0.05 0.05"
-      ar-scale="auto"
-      bounds="tight"
-      style="width:100vw; height:100vh;">
-    </model-viewer>
-
-    <button id="btnAR"
-      style="
-        position:fixed;
-        bottom:16px;
-        left:50%;
-        transform:translateX(-50%);
-        padding:12px 18px;
-        border-radius:999px;
-        border:none;
-        background:white;
-        color:black;
-        font-weight:600;
-        font-family:inherit;
-        box-shadow:0 4px 12px rgba(0,0,0,0.3);
-        z-index:20;">
-      AR
-    </button>
-
+  <body>
     <script>
-      const mv = document.getElementById('mv');
-      const btn = document.getElementById('btnAR');
-      const arHint = document.getElementById('arHint');
-
-      mv.addEventListener('ar-status', (e) => {
-        const status = e.detail.status;
-
-        if (status === 'session-started') {
-          arHint.style.display = 'block';
-          arHint.textContent = 'Tap on the floor to place the model.';
-        }
-
-        if (status === 'session-ended' || status === 'failed') {
-          arHint.style.display = 'none';
-        }
-      });
-
-      btn.addEventListener('click', () => {
-        if (mv && mv.activateAR) mv.activateAR();
-      });
+      const ua = navigator.userAgent || "";
+      const isIOS = /iPad|iPhone|iPod/.test(ua);
+      window.location.replace(isIOS ? "ios.html" : "android.html");
     </script>
-
   </body>
 </html>
-
-
-
-
-
-
-
-
