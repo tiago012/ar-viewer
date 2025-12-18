@@ -5,7 +5,7 @@
     <title>AR Viewer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Carrega o model-viewer -->
+    <!-- model-viewer -->
     <script type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
     </script>
@@ -18,23 +18,30 @@
         If you see this text and the model, everything is working. 👍
       </h1>
       <p style="margin:4px 0 0;">
-       On your mobile phone, use the AR cube icon or the button below.
+        On your mobile phone, use the AR cube icon or the button below.
       </p>
     </div>
 
-    <!-- O teu modelo 3D -->
+    <!-- Modelo 3D -->
     <model-viewer
       id="mv"
       src="Siemens%20CH.glb"
       ios-src="Siemens%20CH.usdz"
+
       ar
       ar-modes="webxr scene-viewer quick-look"
+
       camera-controls
       auto-rotate
+
+      scale="1 1 1"
+      ar-scale="fixed"
+      bounds="tight"
+
       style="width:100vw; height:100vh;">
     </model-viewer>
 
-    <!-- Botão extra (podes ignorar) -->
+    <!-- Botão AR -->
     <button id="btnAR"
       style="
         position:fixed;
@@ -58,7 +65,6 @@
       const mv = document.getElementById('mv');
       const btn = document.getElementById('btnAR');
 
-      // Sem alerts, sem mensagens — se falhar, falha em silêncio
       btn.addEventListener('click', () => {
         if (mv && mv.activateAR) {
           mv.activateAR();
@@ -68,6 +74,7 @@
 
   </body>
 </html>
+
 
 
 
