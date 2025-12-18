@@ -1,80 +1,200 @@
-<!DOCTYPE html>
-<html lang="pt">
+<!doctype html>
+<html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <title>AR Viewer (iOS)</title>
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <title>iOS AR (Controlled)</title>
+    <style>
+      html, body { margin:0; height:100%; overflow:hidden; background:#000; }
+      #hud {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        z-index: 10;
+        background: rgba(0,0,0,.72);
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.25;
+        max-width: 92vw;
+        text-align: center;
+        pointer-events: none;
+      }
+      #top {
+        position: fixed;
+        left: 12px;
+        top: 12px;
+        z-index: 10;
+        color: #fff;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font-size: 14px;
+        opacity: .9;
+      }
+      canvas { display:block; }
+    </style>
   </head>
 
-  <body style="margin:0; background:#202020; color:white; font-family:sans-serif;">
+  <body>
+    <div id="top">iPhone AR (code-controlled)</div>
+    <div id="hud">Tap to place the model (2m ahead). Drag to rotate. Pinch to scale.</div>
 
-    <div style="position:fixed; top:10px; left:10px; z-index:10;">
-      <h1 style="margin:0; font-size:18px;">
-        iPhone AR (Quick Look) 📱
-      </h1>
-      <p style="margin:4px 0 0;">
-        Move your phone to detect the floor, then tap to place the model.
-      </p>
-    </div>
+    <script type="module">
+      import * as THREE from "https://esm.sh/three@0.160.0";
+      import * as ZapparThree from "https://esm.sh/@zappar/zappar-threejs@2.2.2";
+      import { GLTFLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
 
-    <!-- Simple overlay shown immediately (because Quick Look ignores WebXR placement) -->
-    <div
-      style="
-        position:fixed;
-        left:50%;
-        bottom:80px;
-        transform:translateX(-50%);
-        z-index:30;
-        background:rgba(0,0,0,0.75);
-        padding:10px 14px;
-        border-radius:12px;
-        font-size:14px;
-        line-height:1.3;
-        text-align:center;
-        max-width:92vw;">
-      iPhone: move your phone, then tap to place the model. If it appears too close, step back and tap again.
-    </div>
+      // --- Config ---
+      const MODEL_URL = "./Siemens%20CH.glb"; // rename to Siemens_CH.glb if you want, then change here
+      const PLACE_DISTANCE_METERS = 2.0;
+      const INITIAL_MODEL_SCALE = 0.01;
 
-    <model-viewer
-      id="mv"
-      src="Siemens%20CH.glb"
-      ios-src="Siemens%20CH.usdz"
-      ar
-      ar-modes="quick-look"
-      camera-controls
-      auto-rotate
-      scale="0.01 0.01 0.01"
-      bounds="tight"
-      style="width:100vw; height:100vh;">
-    </model-viewer>
+      const hud = document.getElementById("hud");
 
-    <button id="btnAR"
-      style="
-        position:fixed;
-        bottom:16px;
-        left:50%;
-        transform:translateX(-50%);
-        padding:12px 18px;
-        border-radius:999px;
-        border:none;
-        background:white;
-        color:black;
-        font-weight:600;
-        font-family:inherit;
-        box-shadow:0 4px 12px rgba(0,0,0,0.3);
-        z-index:20;">
-      View in AR
-    </button>
+      // --- Renderer ---
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      document.body.appendChild(renderer.domElement);
 
-    <script>
-      const mv = document.getElementById('mv');
-      const btn = document.getElementById('btnAR');
+      // --- Scene + Camera ---
+      const scene = new THREE.Scene();
+      const camera = new ZapparThree.Camera();
+      scene.add(camera);
 
-      btn.addEventListener('click', () => {
-        if (mv && mv.activateAR) mv.activateAR();
+      // Lighting
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 1));
+      const dir = new THREE.DirectionalLight(0xffffff, 0.7);
+      dir.position.set(2, 4, 2);
+      scene.add(dir);
+
+      // --- Permissions UI (built-in) ---
+      const granted = await ZapparThree.permissionRequestUI();
+      if (!granted) {
+        hud.textContent = "Camera permission is required for AR.";
+        throw new Error("Camera permission denied");
+      }
+      camera.start();
+
+      // --- Instant World Tracking ---
+      const tracker = new ZapparThree.InstantWorldTracker();
+      const anchorGroup = new ZapparThree.InstantWorldAnchorGroup(camera, tracker);
+      scene.add(anchorGroup);
+
+      // --- Load Model ---
+      const loader = new GLTFLoader();
+      let model = null;
+      let modelRoot = new THREE.Group();
+      anchorGroup.add(modelRoot);
+
+      loader.load(
+        MODEL_URL,
+        (gltf) => {
+          model = gltf.scene;
+          model.visible = false;
+          model.scale.setScalar(INITIAL_MODEL_SCALE);
+          modelRoot.add(model);
+          hud.textContent = "Tap to place the model (2m ahead). Drag to rotate. Pinch to scale.";
+        },
+        undefined,
+        (err) => {
+          console.error(err);
+          hud.textContent = "Failed to load model. Check the .glb path/name.";
+        }
+      );
+
+      // --- Placement ---
+      let placed = false;
+
+      function placeInFront() {
+        // Anchor pose relative to camera: (x, y, z) in meters; negative z = forward
+        tracker.setAnchorPoseFromCameraOffset(0, 0, -PLACE_DISTANCE_METERS);
+        if (model) model.visible = true;
+        placed = true;
+      }
+
+      // --- Touch controls: drag rotate + pinch scale ---
+      let isDragging = false;
+      let lastX = 0;
+
+      let pinchStartDist = 0;
+      let startScale = INITIAL_MODEL_SCALE;
+
+      function getTouches(e) {
+        return e.touches ? Array.from(e.touches) : [];
+      }
+      function dist(a, b) {
+        const dx = a.clientX - b.clientX;
+        const dy = a.clientY - b.clientY;
+        return Math.hypot(dx, dy);
+      }
+
+      renderer.domElement.addEventListener("touchstart", (e) => {
+        const t = getTouches(e);
+
+        // First interaction: place
+        if (!placed) {
+          placeInFront();
+          hud.textContent = "Placed. Tap again to re-place. Drag to rotate. Pinch to scale.";
+          return;
+        }
+
+        if (t.length === 1) {
+          isDragging = true;
+          lastX = t[0].clientX;
+        } else if (t.length === 2 && model) {
+          pinchStartDist = dist(t[0], t[1]);
+          startScale = model.scale.x;
+        }
+      }, { passive: true });
+
+      renderer.domElement.addEventListener("touchmove", (e) => {
+        if (!model) return;
+        const t = getTouches(e);
+
+        if (t.length === 1 && isDragging) {
+          const x = t[0].clientX;
+          const dx = x - lastX;
+          lastX = x;
+
+          // Rotate around Y
+          modelRoot.rotation.y += dx * 0.01;
+        } else if (t.length === 2) {
+          const d = dist(t[0], t[1]);
+          if (pinchStartDist > 0) {
+            const factor = d / pinchStartDist;
+            const newScale = THREE.MathUtils.clamp(startScale * factor, 0.001, 10);
+            model.scale.setScalar(newScale);
+          }
+        }
+      }, { passive: true });
+
+      renderer.domElement.addEventListener("touchend", (e) => {
+        isDragging = false;
+        pinchStartDist = 0;
+      }, { passive: true });
+
+      // Re-place on tap (single touch end without drag is tricky; keep it simple: any tap when placed re-places)
+      renderer.domElement.addEventListener("click", () => {
+        if (!placed) return;
+        placeInFront();
+        hud.textContent = "Re-placed 2m ahead. Drag to rotate. Pinch to scale.";
+      });
+
+      // --- Render loop ---
+      function animate() {
+        requestAnimationFrame(animate);
+        camera.updateFrame(renderer);
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      window.addEventListener("resize", () => {
+        renderer.setSize(window.innerWidth, window.innerHeight);
       });
     </script>
-
   </body>
 </html>
+
