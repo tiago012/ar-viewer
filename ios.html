@@ -6,184 +6,127 @@
     <title>iOS AR (Controlled)</title>
     <style>
       html, body { margin:0; height:100%; overflow:hidden; background:#000; }
-      #hud {
-        position: fixed;
-        left: 50%;
-        bottom: 18px;
-        transform: translateX(-50%);
-        z-index: 10;
-        background: rgba(0,0,0,.72);
-        color: #fff;
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        font-size: 14px;
-        line-height: 1.25;
-        max-width: 92vw;
-        text-align: center;
-        pointer-events: none;
+      #hud{
+        position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+        z-index:10; background:rgba(0,0,0,.72); color:#fff;
+        padding:10px 14px; border-radius:12px;
+        font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+        font-size:14px; line-height:1.25; max-width:92vw; text-align:center;
+        pointer-events:none;
       }
-      #top {
-        position: fixed;
-        left: 12px;
-        top: 12px;
-        z-index: 10;
-        color: #fff;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        font-size: 14px;
-        opacity: .9;
-      }
-      canvas { display:block; }
+      canvas{ display:block; }
     </style>
   </head>
-
   <body>
-    <div id="top">iPhone AR (code-controlled)</div>
-    <div id="hud">Tap to place the model (2m ahead). Drag to rotate. Pinch to scale.</div>
+    <div id="hud">Tap to place the model.</div>
 
     <script type="module">
       import * as THREE from "https://esm.sh/three@0.160.0";
       import * as ZapparThree from "https://esm.sh/@zappar/zappar-threejs@2.2.2";
       import { GLTFLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
 
-      // --- Config ---
-      const MODEL_URL = "./Siemens%20CH.glb"; // rename to Siemens_CH.glb if you want, then change here
+      const MODEL_URL = "./Siemens%20CH.glb";  // recomendo renomear para Siemens_CH.glb
       const PLACE_DISTANCE_METERS = 2.0;
       const INITIAL_MODEL_SCALE = 0.01;
 
       const hud = document.getElementById("hud");
 
-      // --- Renderer ---
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      // Renderer
+      const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       document.body.appendChild(renderer.domElement);
 
-      // --- Scene + Camera ---
+      // IMPORTANT for Zappar camera background
+      ZapparThree.glContextSet(renderer.getContext());
+
+      // Scene + Camera
       const scene = new THREE.Scene();
       const camera = new ZapparThree.Camera();
       scene.add(camera);
+      scene.background = camera.backgroundTexture;
 
-      // Lighting
+      // Light
       scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 1));
-      const dir = new THREE.DirectionalLight(0xffffff, 0.7);
-      dir.position.set(2, 4, 2);
-      scene.add(dir);
 
-      // --- Permissions UI (built-in) ---
+      // Permission + start camera
       const granted = await ZapparThree.permissionRequestUI();
       if (!granted) {
-        hud.textContent = "Camera permission is required for AR.";
+        hud.textContent = "Camera permission required.";
         throw new Error("Camera permission denied");
       }
       camera.start();
 
-      // --- Instant World Tracking ---
+      // World tracking
       const tracker = new ZapparThree.InstantWorldTracker();
       const anchorGroup = new ZapparThree.InstantWorldAnchorGroup(camera, tracker);
       scene.add(anchorGroup);
 
-      // --- Load Model ---
+      // Load model
       const loader = new GLTFLoader();
-      let model = null;
-      let modelRoot = new THREE.Group();
+      const modelRoot = new THREE.Group();
       anchorGroup.add(modelRoot);
 
-      loader.load(
-        MODEL_URL,
-        (gltf) => {
-          model = gltf.scene;
-          model.visible = false;
-          model.scale.setScalar(INITIAL_MODEL_SCALE);
-          modelRoot.add(model);
-          hud.textContent = "Tap to place the model (2m ahead). Drag to rotate. Pinch to scale.";
-        },
-        undefined,
-        (err) => {
-          console.error(err);
-          hud.textContent = "Failed to load model. Check the .glb path/name.";
-        }
-      );
+      let model = null;
+      loader.load(MODEL_URL, (gltf) => {
+        model = gltf.scene;
+        model.visible = false;
+        model.scale.setScalar(INITIAL_MODEL_SCALE);
+        modelRoot.add(model);
+        hud.textContent = "Tap to place. Drag to rotate. Pinch to scale.";
+      }, undefined, () => {
+        hud.textContent = "Failed to load model (.glb). Check file name/path.";
+      });
 
-      // --- Placement ---
+      // Place in front
       let placed = false;
-
       function placeInFront() {
-        // Anchor pose relative to camera: (x, y, z) in meters; negative z = forward
         tracker.setAnchorPoseFromCameraOffset(0, 0, -PLACE_DISTANCE_METERS);
         if (model) model.visible = true;
         placed = true;
       }
 
-      // --- Touch controls: drag rotate + pinch scale ---
-      let isDragging = false;
-      let lastX = 0;
+      // Touch rotate + pinch scale
+      let dragging = false, lastX = 0;
+      let pinchStart = 0, startScale = INITIAL_MODEL_SCALE;
 
-      let pinchStartDist = 0;
-      let startScale = INITIAL_MODEL_SCALE;
-
-      function getTouches(e) {
-        return e.touches ? Array.from(e.touches) : [];
-      }
-      function dist(a, b) {
-        const dx = a.clientX - b.clientX;
-        const dy = a.clientY - b.clientY;
-        return Math.hypot(dx, dy);
-      }
+      const dist = (a,b) => Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
 
       renderer.domElement.addEventListener("touchstart", (e) => {
-        const t = getTouches(e);
+        if (!model) return;
+        if (!placed) { placeInFront(); return; }
 
-        // First interaction: place
-        if (!placed) {
-          placeInFront();
-          hud.textContent = "Placed. Tap again to re-place. Drag to rotate. Pinch to scale.";
-          return;
-        }
-
-        if (t.length === 1) {
-          isDragging = true;
-          lastX = t[0].clientX;
-        } else if (t.length === 2 && model) {
-          pinchStartDist = dist(t[0], t[1]);
+        if (e.touches.length === 1) {
+          dragging = true;
+          lastX = e.touches[0].clientX;
+        } else if (e.touches.length === 2) {
+          pinchStart = dist(e.touches[0], e.touches[1]);
           startScale = model.scale.x;
         }
-      }, { passive: true });
+      }, { passive:true });
 
       renderer.domElement.addEventListener("touchmove", (e) => {
         if (!model) return;
-        const t = getTouches(e);
 
-        if (t.length === 1 && isDragging) {
-          const x = t[0].clientX;
+        if (e.touches.length === 1 && dragging) {
+          const x = e.touches[0].clientX;
           const dx = x - lastX;
           lastX = x;
-
-          // Rotate around Y
           modelRoot.rotation.y += dx * 0.01;
-        } else if (t.length === 2) {
-          const d = dist(t[0], t[1]);
-          if (pinchStartDist > 0) {
-            const factor = d / pinchStartDist;
-            const newScale = THREE.MathUtils.clamp(startScale * factor, 0.001, 10);
-            model.scale.setScalar(newScale);
-          }
+        } else if (e.touches.length === 2 && pinchStart > 0) {
+          const d = dist(e.touches[0], e.touches[1]);
+          const factor = d / pinchStart;
+          const newScale = THREE.MathUtils.clamp(startScale * factor, 0.001, 10);
+          model.scale.setScalar(newScale);
         }
-      }, { passive: true });
+      }, { passive:true });
 
-      renderer.domElement.addEventListener("touchend", (e) => {
-        isDragging = false;
-        pinchStartDist = 0;
-      }, { passive: true });
+      renderer.domElement.addEventListener("touchend", () => {
+        dragging = false;
+        pinchStart = 0;
+      }, { passive:true });
 
-      // Re-place on tap (single touch end without drag is tricky; keep it simple: any tap when placed re-places)
-      renderer.domElement.addEventListener("click", () => {
-        if (!placed) return;
-        placeInFront();
-        hud.textContent = "Re-placed 2m ahead. Drag to rotate. Pinch to scale.";
-      });
-
-      // --- Render loop ---
+      // Render loop
       function animate() {
         requestAnimationFrame(animate);
         camera.updateFrame(renderer);
@@ -197,4 +140,3 @@
     </script>
   </body>
 </html>
-
