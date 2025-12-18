@@ -4,10 +4,7 @@
     <meta charset="UTF-8" />
     <title>AR Viewer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <script type="module"
-      src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
-    </script>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   </head>
 
   <body style="margin:0; background:#202020; color:white; font-family:sans-serif;">
@@ -21,7 +18,7 @@
       </p>
     </div>
 
-    <!-- AR hint overlay (shown only while in AR) -->
+    <!-- AR hint overlay -->
     <div id="arHint"
       style="
         display:none;
@@ -36,9 +33,8 @@
         font-size:14px;
         line-height:1.3;
         text-align:center;
-        max-width:90vw;
-        pointer-events:none;
-      ">
+        max-width:92vw;
+        pointer-events:none;">
       Tap on the floor to place the model.
     </div>
 
@@ -46,20 +42,14 @@
       id="mv"
       src="Siemens%20CH.glb"
       ios-src="Siemens%20CH.usdz"
-
       ar
       ar-modes="webxr scene-viewer quick-look"
-
       ar-placement="floor"
       placement="tap"
-
       camera-controls
       auto-rotate
-
-      scale="0.03 0.03 0.03"
-      ar-scale="auto"
+      scale="0.01 0.01 0.01"
       bounds="tight"
-
       style="width:100vw; height:100vh;">
     </model-viewer>
 
@@ -77,8 +67,7 @@
         font-weight:600;
         font-family:inherit;
         box-shadow:0 4px 12px rgba(0,0,0,0.3);
-        z-index:20;
-      ">
+        z-index:20;">
       AR
     </button>
 
@@ -87,11 +76,26 @@
       const btn = document.getElementById('btnAR');
       const arHint = document.getElementById('arHint');
 
-      // Show/hide hint when entering/exiting AR
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
       mv.addEventListener('ar-status', (e) => {
         const status = e.detail.status;
-        const inAR = status === 'session-started';
-        arHint.style.display = inAR ? 'block' : 'none';
+
+        if (status === 'session-started') {
+          arHint.style.display = 'block';
+
+          // iOS Quick Look does not allow us to control the initial placement/distance.
+          if (isIOS) {
+            arHint.textContent =
+              'iPhone: move your phone to detect the floor, then tap to place the model. If it appears too close, step back and tap again.';
+          } else {
+            arHint.textContent = 'Tap on the floor to place the model.';
+          }
+        }
+
+        if (status === 'session-ended' || status === 'failed') {
+          arHint.style.display = 'none';
+        }
       });
 
       btn.addEventListener('click', () => {
@@ -101,6 +105,8 @@
 
   </body>
 </html>
+
+
 
 
 
