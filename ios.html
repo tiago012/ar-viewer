@@ -14,163 +14,168 @@
         font-size:14px; line-height:1.25; max-width:92vw; text-align:center;
         pointer-events:none;
       }
-      #top{
-        position:fixed; left:12px; top:12px; z-index:10; color:#fff;
+      #btnStart{
+        position:fixed; left:50%; bottom:80px; transform:translateX(-50%);
+        z-index:20; border:none; border-radius:999px;
+        padding:12px 18px; font-weight:700;
         font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-        font-size:14px; opacity:.9;
       }
       canvas{ display:block; }
     </style>
   </head>
 
   <body>
-    <div id="top">iPhone AR (code-controlled)</div>
-    <div id="hud">Requesting camera permission…</div>
+    <button id="btnStart">Start AR</button>
+    <div id="hud">Tap “Start AR” to request camera access.</div>
 
     <script type="module">
       import * as THREE from "https://esm.sh/three@0.160.0";
       import * as ZapparThree from "https://esm.sh/@zappar/zappar-threejs@2.2.2";
       import { GLTFLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
 
-      // ====== CONFIG (AQUI controlas) ======
+      // ====== CONFIG ======
       const MODEL_URL = "./Siemens%20CH.glb";
-      const PLACE_DISTANCE_METERS = 2.0;     // distância à câmara
-      const INITIAL_MODEL_SCALE = 0.3;       // tamanho inicial (igual ao teu Android)
+      const PLACE_DISTANCE_METERS = 2.0;
+      const INITIAL_MODEL_SCALE = 0.3;   // igual ao Android
       const MIN_SCALE = 0.05;
       const MAX_SCALE = 3.0;
-      // ====================================
+      // ====================
 
       const hud = document.getElementById("hud");
+      const btnStart = document.getElementById("btnStart");
 
-      // Renderer
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      document.body.appendChild(renderer.domElement);
-
-      // IMPORTANT: bind GL context for Zappar
-      ZapparThree.glContextSet(renderer.getContext());
-
-      // Scene + camera
-      const scene = new THREE.Scene();
-      const camera = new ZapparThree.Camera();
-      scene.add(camera);
-
-      // IMPORTANT: show camera feed
-      scene.background = camera.backgroundTexture;
-
-      // Light
-      scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 1));
-
-      // Permission
-      const granted = await ZapparThree.permissionRequestUI();
-      if (!granted) {
-        hud.textContent = "Camera permission is required for AR.";
-        throw new Error("Camera permission denied");
-      }
-      camera.start();
-
-      // World tracking
-      const tracker = new ZapparThree.InstantWorldTracker();
-      const anchorGroup = new ZapparThree.InstantWorldAnchorGroup(camera, tracker);
-      scene.add(anchorGroup);
-
-      // Load model
-      const loader = new GLTFLoader();
-      const modelRoot = new THREE.Group();
-      anchorGroup.add(modelRoot);
-
-      let model = null;
-      loader.load(
-        MODEL_URL,
-        (gltf) => {
-          model = gltf.scene;
-          model.visible = false;
-          model.scale.setScalar(INITIAL_MODEL_SCALE);
-          modelRoot.add(model);
-          hud.textContent = "Tap to place. Drag to rotate. Pinch to scale.";
-        },
-        undefined,
-        (err) => {
-          console.error(err);
-          hud.textContent = "Failed to load .glb. Check file name/path.";
-        }
-      );
-
-      // Placement
+      let renderer, scene, camera, tracker, anchorGroup, modelRoot, model;
       let placed = false;
+
+      // Touch helpers
+      let dragging = false, lastX = 0;
+      let pinchStart = 0, startScale = INITIAL_MODEL_SCALE;
+      const dist = (a,b) => Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+
       function placeInFront() {
         tracker.setAnchorPoseFromCameraOffset(0, 0, -PLACE_DISTANCE_METERS);
         if (model) model.visible = true;
         placed = true;
       }
 
-      // Touch controls
-      let dragging = false;
-      let lastX = 0;
+      async function startAR() {
+        btnStart.disabled = true;
+        hud.textContent = "Requesting camera permission…";
 
-      let pinchStart = 0;
-      let startScale = INITIAL_MODEL_SCALE;
+        // Create renderer/scene only when user clicks (important on iOS)
+        renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
 
-      const dist = (a,b) => Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+        ZapparThree.glContextSet(renderer.getContext());
 
-      renderer.domElement.addEventListener("touchstart", (e) => {
-        if (!model) return;
+        scene = new THREE.Scene();
+        camera = new ZapparThree.Camera();
+        scene.add(camera);
+        scene.background = camera.backgroundTexture;
 
-        if (!placed) {
-          placeInFront();
-          hud.textContent = "Placed. Tap again to re-place. Drag to rotate. Pinch to scale.";
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 1));
+
+        // Permission MUST be triggered by user gesture (this click)
+        const granted = await ZapparThree.permissionRequestUI();
+        if (!granted) {
+          hud.textContent = "Camera permission denied. Check Safari settings for this site.";
+          btnStart.disabled = false;
           return;
         }
 
-        if (e.touches.length === 1) {
-          dragging = true;
-          lastX = e.touches[0].clientX;
-        } else if (e.touches.length === 2) {
-          pinchStart = dist(e.touches[0], e.touches[1]);
-          startScale = model.scale.x;
+        camera.start();
+
+        tracker = new ZapparThree.InstantWorldTracker();
+        anchorGroup = new ZapparThree.InstantWorldAnchorGroup(camera, tracker);
+        scene.add(anchorGroup);
+
+        modelRoot = new THREE.Group();
+        anchorGroup.add(modelRoot);
+
+        hud.textContent = "Loading model…";
+
+        const loader = new GLTFLoader();
+        loader.load(
+          MODEL_URL,
+          (gltf) => {
+            model = gltf.scene;
+            model.visible = false;
+            model.scale.setScalar(INITIAL_MODEL_SCALE);
+            modelRoot.add(model);
+            hud.textContent = "Tap to place. Drag to rotate. Pinch to scale.";
+          },
+          undefined,
+          (err) => {
+            console.error(err);
+            hud.textContent = "Failed to load .glb. Check file name/path.";
+          }
+        );
+
+        // Touch controls
+        renderer.domElement.addEventListener("touchstart", (e) => {
+          if (!model) return;
+
+          if (!placed) {
+            placeInFront();
+            hud.textContent = "Placed. Tap again to re-place. Drag to rotate. Pinch to scale.";
+            return;
+          }
+
+          if (e.touches.length === 1) {
+            dragging = true;
+            lastX = e.touches[0].clientX;
+          } else if (e.touches.length === 2) {
+            pinchStart = dist(e.touches[0], e.touches[1]);
+            startScale = model.scale.x;
+          }
+        }, { passive:true });
+
+        renderer.domElement.addEventListener("touchmove", (e) => {
+          if (!model) return;
+
+          if (e.touches.length === 1 && dragging) {
+            const x = e.touches[0].clientX;
+            const dx = x - lastX;
+            lastX = x;
+            modelRoot.rotation.y += dx * 0.01;
+          } else if (e.touches.length === 2 && pinchStart > 0) {
+            const d = dist(e.touches[0], e.touches[1]);
+            const factor = d / pinchStart;
+            const newScale = THREE.MathUtils.clamp(startScale * factor, MIN_SCALE, MAX_SCALE);
+            model.scale.setScalar(newScale);
+          }
+        }, { passive:true });
+
+        renderer.domElement.addEventListener("touchend", () => {
+          dragging = false;
+          pinchStart = 0;
+        }, { passive:true });
+
+        // Re-place on click
+        renderer.domElement.addEventListener("click", () => {
+          if (!model) return;
+          if (!placed) return;
+          placeInFront();
+        });
+
+        // Hide Start button once AR is running
+        btnStart.style.display = "none";
+
+        function animate() {
+          requestAnimationFrame(animate);
+          camera.updateFrame(renderer);
+          renderer.render(scene, camera);
         }
-      }, { passive: true });
+        animate();
 
-      renderer.domElement.addEventListener("touchmove", (e) => {
-        if (!model) return;
-
-        if (e.touches.length === 1 && dragging) {
-          const x = e.touches[0].clientX;
-          const dx = x - lastX;
-          lastX = x;
-          modelRoot.rotation.y += dx * 0.01;
-        } else if (e.touches.length === 2 && pinchStart > 0) {
-          const d = dist(e.touches[0], e.touches[1]);
-          const factor = d / pinchStart;
-          const newScale = THREE.MathUtils.clamp(startScale * factor, MIN_SCALE, MAX_SCALE);
-          model.scale.setScalar(newScale);
-        }
-      }, { passive: true });
-
-      renderer.domElement.addEventListener("touchend", () => {
-        dragging = false;
-        pinchStart = 0;
-      }, { passive: true });
-
-      // Re-place on tap (optional; keeps it simple)
-      renderer.domElement.addEventListener("click", () => {
-        if (!model) return;
-        if (!placed) return;
-        placeInFront();
-      });
-
-      // Render loop
-      function animate() {
-        requestAnimationFrame(animate);
-        camera.updateFrame(renderer);
-        renderer.render(scene, camera);
+        window.addEventListener("resize", () => {
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
       }
-      animate();
 
-      window.addEventListener("resize", () => {
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
+      btnStart.addEventListener("click", startAR);
     </script>
   </body>
 </html>
