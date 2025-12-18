@@ -5,7 +5,6 @@
     <title>AR Viewer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- model-viewer -->
     <script type="module"
       src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
     </script>
@@ -22,7 +21,6 @@
       </p>
     </div>
 
-    <!-- Modelo 3D -->
     <model-viewer
       id="mv"
       src="Siemens%20CH.glb"
@@ -31,17 +29,19 @@
       ar
       ar-modes="webxr scene-viewer quick-look"
 
+      ar-placement="floor"
+      placement="tap"
+
       camera-controls
       auto-rotate
 
-      scale="1 1 1"
-      ar-scale="fixed"
+      scale="0.25 0.25 0.25"
+      ar-scale="auto"
       bounds="tight"
 
       style="width:100vw; height:100vh;">
     </model-viewer>
 
-    <!-- Botão AR -->
     <button id="btnAR"
       style="
         position:fixed;
@@ -66,17 +66,9 @@
       const btn = document.getElementById('btnAR');
 
       btn.addEventListener('click', () => {
-        if (mv && mv.activateAR) {
-          mv.activateAR();
-        }
+        if (mv && mv.activateAR) mv.activateAR();
       });
     </script>
 
   </body>
 </html>
-
-
-
-
-
-
