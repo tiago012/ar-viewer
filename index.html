@@ -21,6 +21,27 @@
       </p>
     </div>
 
+    <!-- AR hint overlay (shown only while in AR) -->
+    <div id="arHint"
+      style="
+        display:none;
+        position:fixed;
+        left:50%;
+        bottom:80px;
+        transform:translateX(-50%);
+        z-index:30;
+        background:rgba(0,0,0,0.75);
+        padding:10px 14px;
+        border-radius:12px;
+        font-size:14px;
+        line-height:1.3;
+        text-align:center;
+        max-width:90vw;
+        pointer-events:none;
+      ">
+      Tap on the floor to place the model.
+    </div>
+
     <model-viewer
       id="mv"
       src="Siemens%20CH.glb"
@@ -64,6 +85,14 @@
     <script>
       const mv = document.getElementById('mv');
       const btn = document.getElementById('btnAR');
+      const arHint = document.getElementById('arHint');
+
+      // Show/hide hint when entering/exiting AR
+      mv.addEventListener('ar-status', (e) => {
+        const status = e.detail.status;
+        const inAR = status === 'session-started';
+        arHint.style.display = inAR ? 'block' : 'none';
+      });
 
       btn.addEventListener('click', () => {
         if (mv && mv.activateAR) mv.activateAR();
@@ -72,5 +101,6 @@
 
   </body>
 </html>
+
 
 
